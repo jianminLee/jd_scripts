@@ -10,5 +10,6 @@
  fi
 
 # #自定义增加crontab任务
- echo "20 * * * * node /jd_scripts_orz/jd_dreamFactory.js >> /scripts/logs/jd_dreamFactory_orz.log 2>&1" >> /scripts/docker/merged_list_file.sh
+ ## sleep $((RANDOM % $RANDOM_DELAY_MAX)); 延迟执行，确保docker配置了RANDOM_DELAY_MAX环境变量
+ echo "10 * * * * sleep $((RANDOM % $RANDOM_DELAY_MAX)); node /jd_scripts_orz/jd_dreamFactory.js >> /scripts/logs/jd_dreamFactory_orz.log 2>&1" >> /scripts/docker/merged_list_file.sh
  # echo "59,0,1,2,3,4,5 0,9,11,13,15,17,19,20,21,22,23 * * *  node /scripts/jd_live_redrain_offical_mod.js >> /scripts/logs/jd_live_redrain_offical_mod.log 2>&1" >> /scripts/docker/merged_list_file.sh
