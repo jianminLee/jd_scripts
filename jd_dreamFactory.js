@@ -34,7 +34,7 @@ cron "10 * * * *" script-path=https://jdsharedresourcescdn.azureedge.net/jdresou
 const $ = new Env('京喜工厂');
 const JD_API_HOST = 'https://m.jingxi.com';
 const helpAu = true; //帮作者助力 免费拿活动
-const notify = $.isNode() ? require('/scripts/sendNotify') : '';
+const notify = $.isNode() ? require('./sendNotify') : '';
 let jdNotify = true;//是否关闭通知，false打开通知推送，true关闭通知推送
 const randomCount = $.isNode() ? 20 : 5;
 let tuanActiveId = `6S9y4sJUfA2vPQP6TLdVIQ==`;
@@ -46,7 +46,7 @@ const inviteCodes = [
   '-OvElMzqeyeGBWazWYjI1Q==',
   'GFwo6PntxDHH95ZRzZ5uAg=='
 ];
-const jdCookieNode = $.isNode() ? require('/scripts/jdCookie.js') : '';
+const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 $.tuanIds = [];
 if ($.isNode()) {
   Object.keys(jdCookieNode).forEach((item) => {
@@ -1401,7 +1401,7 @@ function requireConfig() {
     console.log(`开始获取${$.name}配置文件\n`);
     console.log(`tuanActiveId: ${tuanActiveId}`)
     //Node.js用户请在jdCookie.js处填写京东ck;
-    const shareCodes = $.isNode() ? require('/scripts/jdDreamFactoryShareCodes.js') : '';
+    const shareCodes = $.isNode() ? require('./jdDreamFactoryShareCodes.js') : '';
     console.log(`共${cookiesArr.length}个京东账号\n`);
     $.shareCodesArr = [];
     if ($.isNode()) {
