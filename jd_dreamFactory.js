@@ -21,6 +21,10 @@ cron "10 * * * *" script-path=https://jdsharedresourcescdn.azureedge.net/jdresou
 ============小火箭=========
 京喜工厂 = type=cron,script-path=https://jdsharedresourcescdn.azureedge.net/jdresource/jd_dreamFactory.js, cronexpr="10 * * * *", timeout=3600, enable=true
 
+
+Quantumultx 添加重写引用 https://raw.githubusercontent.com/jianminLee/jd_scripts/main/url_sign_params.conf
+添加重写引用后删除京喜APP后重新下载，进入京喜工厂获取url签名参数，日志也会打印重写参数！
+
  */
 // prettier-ignore
 !function (t, r) { "object" == typeof exports ? module.exports = exports = r() : "function" == typeof define && define.amd ? define([], r) : t.CryptoJS = r() }(this, function () {
@@ -48,6 +52,18 @@ const inviteCodes = [
 ];
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 $.tuanIds = [];
+/*
+url签名参数
+ */
+const random = '1gy8nc5oDM+y';
+let token = `tk01w9a771c1aa8nd1k2NUo4UmNaahBe0/qh61gMNV9222JdJwlR0wyO9gko9dFTogSpvPIpqxstZJ9tl8JM9ONKNJWk`;
+let fingerprint = 5525701217505161;
+const appId = 10001;
+
+let fingerprintJD = '';
+let urlSignTokenJD = '';
+let enCryptMethodJD = '';
+
 if ($.isNode()) {
   Object.keys(jdCookieNode).forEach((item) => {
     cookiesArr.push(jdCookieNode[item])
@@ -56,7 +72,54 @@ if ($.isNode()) {
   if (process.env.DREAMFACTORY_FORBID_ACCOUNT) process.env.DREAMFACTORY_FORBID_ACCOUNT.split('&').map((item, index) => Number(item) === 0 ? cookiesArr = [] : cookiesArr.splice(Number(item) - 1 - index, 1))
 } else {
   cookiesArr = [$.getdata('CookieJD'), $.getdata('CookieJD2'), ...jsonParse($.getdata('CookiesJD') || "[]").map(item => item.cookie)].filter(item => !!item);
+  if (typeof $request != "undefined") {
+    //捕获请求
+    setUrlSignParams();
+  } else {
+    fingerprint = fingerprintJD = $.getdata('FingerprintJD');
+    token = urlSignTokenJD = $.getdata('UrlSignTokenJD');
+    let enCryptMethodJDString = $.getdata('EnCryptMethodJD');
+    enCryptMethodJD = new Function(`return ${enCryptMethodJDString}`)();
+
+    if (fingerprintJD && urlSignTokenJD) {
+      $.log(`获取到已保存的url签名参数，使用该签名参数！`);
+      $.log(`url签名参数:`, `fingerprint: ${fingerprintJD}`, `tk: ${urlSignTokenJD}`, `sign method: ${enCryptMethodJDString}`);
+    } else {
+      $.log(`获取已保存的url签名参数不完整，使用默认签名参数！`);
+    }
+  }
 }
+
+/**
+ * 写入url签名参数
+ */
+function setUrlSignParams()
+{
+  let body = {};
+  //获取请求返回
+  if ($request.body) {
+    body = JSON.parse($request.body);
+    $.setdata(body.fp, 'FingerprintJD');
+    console.log('fingerprint: ' . concat(body.fp));
+  } else {
+    console.log('url签名参数返回结果: ' . concat($response.body));
+    body = JSON.parse($response.body);
+    if (body.status === 200) {
+      let cryptMethodString = body.data.result.algo;
+      // if (cryptMethodString.indexOf('return algo.SHA') > -1) {
+      //   cryptMethodString = cryptMethodString.replace('(str)}', '(str, token)}')
+      // }
+      $.setdata(body.data.result.tk, 'UrlSignTokenJD');
+      $.setdata(cryptMethodString, 'EnCryptMethodJD');
+      $.msg($.name,`获取url签名参数成功！`)
+    } else {
+      $.msg($.name,`获取url签名参数失败！`, body.message)
+    }
+  }
+
+  $.done(body);
+}
+
 !(async () => {
   $.CryptoJS = $.isNode() ? require('crypto-js') : CryptoJS;
   await requireConfig();
@@ -1587,25 +1650,27 @@ const hash1加密方法（例子：algo.SHA512、algo.MD5，主要看签名信�
 function decrypt(time, stk, type, url) {
   stk = stk || (url ? getUrlQueryParams(url, '_stk') : '')
   if (stk) {
-    const random = '1gy8nc5oDM+y';
-    const token = `tk01w9a771c1aa8nd1k2NUo4UmNaahBe0/qh61gMNV9222JdJwlR0wyO9gko9dFTogSpvPIpqxstZJ9tl8JM9ONKNJWk`;
-    const fingerprint = 5525701217505161;
     const timestamp = new Date(time).Format("yyyyMMddhhmmssSSS");
-    const appId = 10001;
 
-    const str = `${token}${fingerprint}${timestamp}${appId}${random}`;
-    const hash1 = $.CryptoJS.HmacSHA512(str, token).toString($.CryptoJS.enc.Hex);
+    let hash1;
+    if (fingerprintJD && urlSignTokenJD) {
+      fp = fingerprintJD;
+      hash1 = enCryptMethodJD(urlSignTokenJD, fingerprintJD, timestamp, appId, $.CryptoJS);
+    } else {
+      const str = `${token}${fingerprint}${timestamp}${appId}${random}`;
+      hash1 = $.CryptoJS.HmacSHA512(str, token);
+    }
     let st = '';
     stk.split(',').map((item, index) => {
       // st += `${item}:${item === '_time' ? time : item === 'zone' ? 'dream_factory' : item === 'type' ? type || '1' : ''}${index === stk.split(',').length -1 ? '' : '&'}`;
       st += `${item}:${getUrlQueryParams(url, item)}${index === stk.split(',').length -1 ? '' : '&'}`;
     })
-    const hash2 = $.CryptoJS.HmacSHA256(st, hash1).toString($.CryptoJS.enc.Hex);
+    const hash2 = $.CryptoJS.HmacSHA256(st, hash1.toString($.CryptoJS.enc.Hex)).toString($.CryptoJS.enc.Hex);
     console.log(`st:${st}\n`)
     // console.log(`hash2:${JSON.stringify(["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)])}\n`)
-    console.log(`h5st:${["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";")}\n`)
+    console.log(`h5st:${["".concat(timestamp.toString()), "".concat(fp.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";")}\n`)
     return ["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";")
-  } else {
+  } else {fingerprint
     return '20210121201915905;8410347712257161;10001;tk01wa5bd1b5fa8nK2drQ3o3azhyhItRUb1DBNK57SQnGlXj9kmaV/iQlhKdXuz1RME5H/+NboJj8FAS9N+FcoAbf6cB;3c567a551a8e1c905a8d676d69e873c0bc7adbd8277957f90e95ab231e1800f2'
   }
 }
