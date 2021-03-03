@@ -23,7 +23,7 @@ cron "10 * * * *" script-path=https://jdsharedresourcescdn.azureedge.net/jdresou
 
 
 Quantumultx 添加重写引用 https://raw.githubusercontent.com/jianminLee/jd_scripts/main/url_sign_params.conf
-添加重写引用后进入京喜APP-京喜工厂获取url签名参数(如果不行最好删除京喜APP重新下载后在操作)，日志也会打印重写参数！
+添加重写引用后进入京喜APP-京喜工厂获取url签名参数(如果不行最好删除京喜APP重新下载后在操作)，日志也会打印重写参数！，如果url签名参数变了，其他跑脚本设备也会失效，列如docker和手机上一起跑脚本要保持一致，否则没更新那端还是会失败。
 
  */
 // prettier-ignore
@@ -55,9 +55,9 @@ $.tuanIds = [];
 /*
 url签名参数
  */
-const random = '1gy8nc5oDM+y';
-let token = `tk01w9a771c1aa8nd1k2NUo4UmNaahBe0/qh61gMNV9222JdJwlR0wyO9gko9dFTogSpvPIpqxstZJ9tl8JM9ONKNJWk`;
-let fingerprint = 5525701217505161;
+const random = 'bDD8HGkRpRWl';
+let token = `tk01wac991bd8a8nTjVLU1BGVUlrFHXlbCZkFTJVM0TDaaPlOt5fZkpS49UmmRmjcizcacl3U7ACn43sV/V/13DAxFse`;
+let fingerprint = 3220710875724161;
 const appId = 10001;
 
 let fingerprintJD = '';
