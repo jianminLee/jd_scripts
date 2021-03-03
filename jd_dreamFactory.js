@@ -23,7 +23,7 @@ cron "10 * * * *" script-path=https://jdsharedresourcescdn.azureedge.net/jdresou
 
 
 Quantumultx 添加重写引用 https://raw.githubusercontent.com/jianminLee/jd_scripts/main/url_sign_params.conf
-添加重写引用后删除京喜APP后重新下载，进入京喜工厂获取url签名参数，日志也会打印重写参数！
+添加重写引用后进入京喜工厂获取url签名参数，日志也会打印重写参数！
 
  */
 // prettier-ignore
