@@ -55,7 +55,7 @@ $.tuanIds = [];
 /*
 url签名参数
  */
-const random = 'bDD8HGkRpRWl';
+const random = '4n9srk1Rd754';
 let token = `tk01w1db01e77a8na2NoUVdsKzViqwzWoEYsrkugVedYVltgUie8FVJWygtqS3sUUEScRehQOBzp3zSKFdWLSIYlofWP`;
 let fingerprint = 3220710875724161;
 const appId = 10001;
