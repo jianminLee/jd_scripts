@@ -1657,7 +1657,7 @@ function decrypt(time, stk, type, url) {
       hash1 = enCryptMethodJD(urlSignTokenJD, fingerprintJD, timestamp, appId, $.CryptoJS);
     } else {
       const str = `${token}${fingerprint}${timestamp}${appId}${random}`;
-      hash1 = $.CryptoJS.HmacSHA512(str, token);
+      hash1 = $.CryptoJS.SHA512(str);
     }
     let st = '';
     stk.split(',').map((item, index) => {
