@@ -63,10 +63,17 @@ class CommandHandler:
                 continue
             elif res.startswith('pt_key='):
                 ##登陆成功
-                self.createDockerContainer(
-                    update=update,
-                    cookie=res.strip()
-                )
+                if env['jd_scripts']['add_user_mode'] == 'attach':
+                    ##附加cookie到容器
+                    self.attachCookieToContainer(
+                        update=update,
+                        cookie=res.strip()
+                    )
+                else:
+                    self.createDockerContainer(
+                        update=update,
+                        cookie=res.strip()
+                    )
                 break
 
         # 删除二维码消息
@@ -76,19 +83,35 @@ class CommandHandler:
         return cookie[(cookie.find('pt_pin=') + 7):-1]
 
 
+    def attachCookieToContainer(self, update, cookie):
+        #创建或更新用户信息
+        if not self.canUseDocker(update, cookie):
+            return
+        cookie_user_id = self.getCookieUserId(cookie)
+
+        User.replace(
+            cookie_user_id=cookie_user_id,
+            cookie=cookie,
+            container_id='',
+            tg_user_id=update.message.chat.id,
+            tg_username=update.message.chat.username
+        ).execute()
+        query = User.select(User.cookie) \
+            .where(User.updated_at >= (datetime.datetime.now() - datetime.timedelta(days=int(env['jd_scripts']['auto_delete_docker_by_days']))))
+        cookies = []
+        for row in query.dicts():
+            cookies.append(row['cookie'])
+        ## 写入文件
+        file = open('cookies.sh',"w")
+        file.write('export JD_COOKIE="' + '&'.join(cookies) + '"')
+        file.close()
+        update.message.reply_text('登陆成功，Cookies:\n' + cookie + '\n\ndocker容器ID:公共容器\n容器人数: ' + str(len(cookies)) + ' 人')
+
     def createDockerContainer(self, update, cookie):
         cookie_user_id = self.getCookieUserId(cookie)
-        user = User.get_or_none(User.cookie_user_id == cookie_user_id)
+        if not self.canUseDocker(update, cookie):
+            return
 
-        if user:
-            if (datetime.datetime.now() - user.updated_at).days >= int(env['jd_scripts']['min_login_days']):
-                ##京东用户已经存在
-                ##大于N天以上才允许更新
-                ## 删除已存在容器
-                docker.stopAndDeleteContainer(containerId=user.container_id)
-            else:
-                update.message.reply_text('登陆成功，Cookies:\n' + cookie + '\n\n京东账号ID【'+cookie_user_id+'】已存在，必须大于 '+env['jd_scripts']['min_login_days']+' 天后才能重新创建')
-                return
         ## 执行docker创建容器命令
         containerId = docker.createAndStartContainer(cookie=cookie, tgUserId=update.message.chat.id, name=cookie_user_id)
         print('container id:' + str(containerId))
@@ -106,6 +129,21 @@ class CommandHandler:
         else:
             update.message.reply_text('登陆成功，Cookies:\n' + cookie + '\n\n创建docker容器失败请稍后重试！')
 
+    def canUseDocker(self, update, cookie):
+        cookie_user_id = self.getCookieUserId(cookie)
+        user = User.get_or_none(User.cookie_user_id == cookie_user_id)
+
+        if user:
+            if (datetime.datetime.now() - user.updated_at).days >= int(env['jd_scripts']['min_login_days']):
+                if env['jd_scripts']['add_user_mode'] == 'create':
+                    ##京东用户已经存在
+                    ##大于N天以上才允许更新
+                    ## 删除已存在容器
+                    docker.stopAndDeleteContainer(containerId=user.container_id)
+                return True
+            else:
+                update.message.reply_text('登陆成功，Cookies:\n' + cookie + '\n\n京东账号ID【'+cookie_user_id+'】已存在，必须大于 '+env['jd_scripts']['min_login_days']+' 天后才能重新创建')
+                return False
 
     def commands(self):
         commands = env['telegram_bot']['commands'].split(',')
