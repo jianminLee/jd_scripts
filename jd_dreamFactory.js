@@ -55,9 +55,9 @@ $.tuanIds = [];
 /*
 url签名参数
  */
-const random = 'H6/aVJK6Ikxh';
-let token = `tk01wcb0f1dbfa8ncCs3RVJTWmROsQFiQEFr0SFKwv1UscY0AzsNkcnhPppzDHItv6SZ0/BerRpNTjivoMuzlCWtgtel`;
-let fingerprint = 3220710875724161;
+const random = 'cNlpbJCwIFx/';
+let token = `tk01wc7951ceea8nVzY0UlBvK3QvPAfwG6UuVMo3YIwnuyPtwgIZr9BSCkJT96NMHRqNWCO5x0zbNsEA2bkjst3tYymV`;
+let fingerprint = 6318883301648161;
 const appId = 10001;
 
 let fingerprintJD = '';
@@ -1657,7 +1657,7 @@ function decrypt(time, stk, type, url) {
       hash1 = enCryptMethodJD(urlSignTokenJD, fingerprintJD, timestamp, appId, $.CryptoJS);
     } else {
       const str = `${token}${fingerprint}${timestamp}${appId}${random}`;
-      hash1 = $.CryptoJS.HmacMD5(str, token);
+      hash1 = $.CryptoJS.HmacSHA512(str, token);
     }
     let st = '';
     stk.split(',').map((item, index) => {
