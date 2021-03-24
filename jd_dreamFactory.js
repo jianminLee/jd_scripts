@@ -1654,7 +1654,7 @@ function decrypt(time, stk, type, url) {
 
     let hash1;
     if (fingerprintJD && urlSignTokenJD) {
-      hash1 = enCryptMethodJD(urlSignTokenJD, fingerprintJD, timestamp, appId, $.CryptoJS);
+      hash1 = enCryptMethodJD(urlSignTokenJD, fingerprintJD.toString(), timestamp.toString(), appId.toString(), $.CryptoJS);
     } else {
       const str = `${token}${fingerprint}${timestamp}${appId}${random}`;
       hash1 = $.CryptoJS.HmacSHA512(str, token);
@@ -1668,7 +1668,7 @@ function decrypt(time, stk, type, url) {
     console.log(`st:${st}\n`)
     // console.log(`hash2:${JSON.stringify(["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)])}\n`)
     console.log(`h5st:${["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";")}\n`)
-    return ["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";")
+    return encodeURIComponent(["".concat(timestamp.toString()), "".concat(fingerprint.toString()), "".concat(appId.toString()), "".concat(token), "".concat(hash2)].join(";"));
   } else {fingerprint
     return '20210121201915905;8410347712257161;10001;tk01wa5bd1b5fa8nK2drQ3o3azhyhItRUb1DBNK57SQnGlXj9kmaV/iQlhKdXuz1RME5H/+NboJj8FAS9N+FcoAbf6cB;3c567a551a8e1c905a8d676d69e873c0bc7adbd8277957f90e95ab231e1800f2'
   }
