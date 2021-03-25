@@ -63,6 +63,7 @@ const appId = 10001;
 let fingerprintJD = '';
 let urlSignTokenJD = '';
 let enCryptMethodJD = '';
+
 if ($.isNode()) {
   Object.keys(jdCookieNode).forEach((item) => {
     cookiesArr.push(jdCookieNode[item])
@@ -71,90 +72,53 @@ if ($.isNode()) {
   if (process.env.DREAMFACTORY_FORBID_ACCOUNT) process.env.DREAMFACTORY_FORBID_ACCOUNT.split('&').map((item, index) => Number(item) === 0 ? cookiesArr = [] : cookiesArr.splice(Number(item) - 1 - index, 1))
 } else {
   cookiesArr = [$.getdata('CookieJD'), $.getdata('CookieJD2'), ...jsonParse($.getdata('CookiesJD') || "[]").map(item => item.cookie)].filter(item => !!item);
-}
+  if (typeof $request != "undefined") {
+    //捕获请求
+    setUrlSignParams();
+  } else {
+    fingerprint = fingerprintJD = $.getdata('FingerprintJD');
+    token = urlSignTokenJD = $.getdata('UrlSignTokenJD');
+    let enCryptMethodJDString = $.getdata('EnCryptMethodJD');
+    enCryptMethodJD = new Function(`return ${enCryptMethodJDString}`)();
 
-/**
- * 请求签名参数
- */
-function requestAlgo()
-{
-    fingerprint = fingerprintJD = generateFp();
-    const options = {
-        "url": `https://cactus.jd.com/request_algo?g_ty=ajax`,
-        "headers": {
-            'Authority': 'cactus.jd.com',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache',
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1',
-            'Content-Type': 'application/json',
-            'Origin': 'https://st.jingxi.com',
-            'Sec-Fetch-Site': 'cross-site',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': 'https://st.jingxi.com/',
-            'Accept-Language': 'zh-CN,zh;q=0.9,zh-TW;q=0.8,en;q=0.7'
-        },
-        'body': JSON.stringify({
-            "version": "1.0",
-            "fp": fingerprintJD,
-            "appId": appId.toString(),
-            "timestamp": Date.now(),
-            "platform": "web",
-            "expandParams": ""
-        })
+    if (fingerprintJD && urlSignTokenJD) {
+      $.log(`获取到已保存的url签名参数，使用该签名参数！`);
+      $.log(`url签名参数:`, `fingerprint: ${fingerprintJD}`, `tk: ${urlSignTokenJD}`, `sign method: ${enCryptMethodJDString}`);
+    } else {
+      $.log(`获取已保存的url签名参数不完整，使用默认签名参数！`);
     }
-    $.post(options, (err, resp, data) => {
-        try {
-            if (err) {
-                console.log(`${JSON.stringify(err)}`)
-                console.log(`request_algo 签名参数API请求失败，请检查网路重试`)
-            } else {
-                if (data) {
-                    console.log(data);
-                    data = JSON.parse(data);
-                    if (data['status'] === 200) {
-                        token = urlSignTokenJD = data.data.result.tk;
-                        let enCryptMethodJDString = data.data.result.algo;
-                        enCryptMethodJD = new Function(`return ${enCryptMethodJDString}`)();
-                        console.log(`获取签名参数成功！`)
-                        console.log(`fp: ${fingerprintJD}`)
-                        console.log(`token: ${urlSignTokenJD}`)
-                        console.log(`enCryptMethodJD: ${enCryptMethodJDString}`)
-                    } else {
-                        console.log(`fp: ${fingerprintJD}`)
-                        console.log('request_algo 签名参数API请求失败:')
-                    }
-                } else {
-                    console.log(`京东服务器返回空数据`)
-                }
-            }
-        } catch (e) {
-            $.logErr(e, resp)
-        } finally {
-            resolve();
-        }
-    })
+  }
 }
 
 /**
- * 生成fingerprint
- * @returns {string}
+ * 写入url签名参数
  */
-function generateFp()
+function setUrlSignParams()
 {
-    let e = "0123456789";
-    let a = 13;
-    let i = '';
-    for (; a--; )
-        i += e[Math.random() * e.length | 0];
-    return (i + Date.now()).slice(0,16)
-}
+  let body = {};
+  //获取请求返回
+  if ($request.body) {
+    body = JSON.parse($request.body);
+    $.setdata(body.fp, 'FingerprintJD');
+    console.log('fingerprint: ' . concat(body.fp));
+  } else {
+    console.log('url签名参数返回结果: ' . concat($response.body));
+    body = JSON.parse($response.body);
+    if (body.status === 200) {
+      let cryptMethodString = body.data.result.algo;
+      // if (cryptMethodString.indexOf('return algo.SHA') > -1) {
+      //   cryptMethodString = cryptMethodString.replace('(str)}', '(str, token)}')
+      // }
+      $.setdata(body.data.result.tk, 'UrlSignTokenJD');
+      $.setdata(cryptMethodString, 'EnCryptMethodJD');
+      $.msg($.name,`获取url签名参数成功！`)
+    } else {
+      $.msg($.name,`获取url签名参数失败！`, body.message)
+    }
+  }
 
-/**
- * 获取签名参数
- */
-requestAlgo();
+  $.done(body);
+}
 
 !(async () => {
   $.CryptoJS = $.isNode() ? require('crypto-js') : CryptoJS;
